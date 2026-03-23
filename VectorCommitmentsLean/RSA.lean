@@ -9,13 +9,14 @@ import Mathlib.Algebra.Order.Ring.Nat
 
 -- variables (a b c d n : ℕ)
 -- Helpers for proof
+@[grind]
 lemma mod_pow_mod (a b n : ℕ ): ((a % n) ^ b) % n = (a ^ b) % n  :=
   by
     change (a % n) ^ b ≡ (a ^ b) [MOD n]
     gcongr 
     apply Nat.mod_modEq
 
-
+@[grind]
 lemma mul_mod_right_distrib (a b n : ℕ) : (a * b) % n = ((a % n) * (b % n)) % n :=
   by
     change (a * b) ≡ a % n * (b % n) [MOD n]
@@ -27,11 +28,12 @@ lemma mul_mod_right_distrib (a b n : ℕ) : (a * b) % n = ((a % n) * (b % n)) % 
 -- variables (msg pub_e p q priv : ℕ)
 
 -- Encryption
+@[grind]
 def enc (msg pub_e n: ℕ) : ℕ := (msg ^ pub_e) % n
 
-
+@[grind]
 def dec (enc priv n : ℕ) : ℕ := (enc ^ priv) % n
-
+@[grind]
 lemma mul_coprime_or_coprime_and {p q: ℕ} (msg: ℕ)
   (prime_p : p.Prime)
   (prime_q : q.Prime)
@@ -71,7 +73,7 @@ lemma mul_coprime_or_coprime_and {p q: ℕ} (msg: ℕ)
           assumption
     }
 
-
+@[grind]
 theorem dec_undoes_enc {p q n msg pub_e priv: ℕ}
 -- These are the picking requirements
   (prime_p : p.Prime)
