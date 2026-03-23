@@ -25,28 +25,28 @@ def KeyGen (p₁ p₂ q: ℕ) (a: ℕ) (e_array: FixedArray q ℕ) (_ : p₁ ≠
     N := p₁ * p₂,
     a := a,
     e_array := e_array,
-    S_array := {arr := (Array.finRange q).map (fun i => a ^ ((Array.finRange q).map (fun j => if i == j then 1 else e_array.arr[j]!)).foldr (· * ·) 1), proof := by simp} 
+    S_array := {arr := (Array.finRange q).map (fun i => a ^ ((Array.finRange q).map (fun j => if i.1== j.1 then 1 else e_array.arr[j.1]'(by grind))).foldr (· * ·) 1), proof := by simp} 
   }
 @[grind]
 def Commitment {q: ℕ} (pp: PublicParameters q)(m_array: FixedArray q ℕ) : ℕ × Auxillary q := 
-  (((Array.finRange q).map (fun i => pp.S_array.arr[i]! ^ m_array.arr[i]!)).foldr (· * ·) 1, m_array)
+  (((Array.finRange q).map (fun i => pp.S_array.arr[i.1]'(by grind) ^ m_array.arr[i.1]'(by grind))).foldr (· * ·) 1, m_array)
 @[grind]
-def Open {q: ℕ} (pp: PublicParameters q) (_: ℕ) (i: ℕ) (aux : Auxillary q) : ℕ :=
-  ((pp.e_array.arr[i]!).floorRoot (((Array.finRange q).map (fun (k: Fin q) => if k.1 == i then 1 else pp.S_array.arr[k]! ^ aux.arr[k]!)).foldr (· * ·) 1))  % pp.N
+def Open {q: ℕ} (pp: PublicParameters q) (_: ℕ) (i: ℕ) (aux : Auxillary q) (iValid: i < q) : ℕ :=
+  ((pp.e_array.arr[i]'(by grind)).floorRoot (((Array.finRange q).map (fun (k: Fin q) => if k.1 == i then 1 else pp.S_array.arr[k]'(by grind) ^ aux.arr[k]'(by grind))).foldr (· * ·) 1))  % pp.N
 
 @[grind]
-def Verify {q: ℕ} (pp: PublicParameters q) (C m i proof : ℕ) : Bool :=
-  if C == (pp.S_array.arr[i]! ^ m) * (proof ^ pp.e_array.arr[i]!) % pp.N then Bool.true else Bool.false
+def Verify {q: ℕ} (pp: PublicParameters q) (C m i proof : ℕ) (iValid: i < q): Bool :=
+  if C == (pp.S_array.arr[i]'(by grind) ^ m) * (proof ^ pp.e_array.arr[i]'(by grind)) % pp.N then Bool.true else Bool.false
 
 @[grind]
-def Update {q: ℕ} (pp: PublicParameters q) (C m m' i: ℕ) : ℕ × UpdateInfo := 
-  (C * pp.S_array.arr[i]!^(m' - m), {m := m, m' := m', i := i})
+def Update {q: ℕ} (pp: PublicParameters q) (C m m' i: ℕ) (iValid: i < q): ℕ × UpdateInfo := 
+  (C * (pp.S_array.arr[i]'(by grind))^(m' - m), {m := m, m' := m', i := i})
 @[grind]
-def ProofUpdate {q: ℕ} (pp: PublicParameters q) (C proof j m' i: ℕ) (U: UpdateInfo) : ℕ × ℕ :=
+def ProofUpdate {q: ℕ} (pp: PublicParameters q) (C proof j m' i: ℕ) (U: UpdateInfo) (iValid: i < q) (jValid: j < q): ℕ × ℕ :=
   if i != j then
-    (C * pp.S_array.arr[i]!^(m' - U.m), proof * pp.e_array.arr[i]!.floorRoot (pp.S_array.arr[i]!^(m' - U.m)))
+    (C * pp.S_array.arr[i]'(by grind)^(m' - U.m), proof * (pp.e_array.arr[i]'(by grind)).floorRoot (pp.S_array.arr[i]'(by grind)^(m' - U.m)))
   else
-    (C * pp.S_array.arr[i]!^(m' - U.m), proof)
+    (C * pp.S_array.arr[i]'(by grind)^(m' - U.m), proof)
 
 theorem normal_correctness {q: ℕ} 
   (pp: PublicParameters q)
@@ -54,13 +54,13 @@ theorem normal_correctness {q: ℕ}
   (aux : Auxillary q)
   (m i: ℕ)
   (m_array: FixedArray q ℕ)
-  (valid_index: i < m_array.arr.size)
+  (iValid: i < q)
   (proof: ℕ)
   (validPublicKey: ∃ p₁ p₂  a e_array neq hp₁ hp₂ he, KeyGen p₁ p₂ q a e_array neq hp₁ hp₂  he = pp)
   (validCommitment:  Commitment pp m_array = (C, aux))
-  (validProof: Open pp m i aux = proof)
+  (validProof: Open pp m i aux  iValid = proof)
   (c_less: C < pp.N)
-  :  m == m_array.arr[i]'valid_index → Verify pp C m i proof == Bool.true:= 
+  :  m == m_array.arr[i]'(by rw [m_array.proof]; exact iValid) → Verify pp C m i proof iValid == Bool.true:= 
     by
       intro mCorrect 
       rcases validPublicKey with ⟨p₁, p₂, a, e_array, neq, hp₁, hp₂, he, validPublicKey⟩
@@ -70,5 +70,8 @@ theorem normal_correctness {q: ℕ}
       simp [Open] at validProof
       cases validPublicKey
       simp at *
-      -- rw [Array.getElem_map (sorry)]
+      rcases validCommitment with ⟨cEq, auxEq⟩
+      aesop
+      
+      -- rw [Array.getElem_map (by sorry)]
       sorry
