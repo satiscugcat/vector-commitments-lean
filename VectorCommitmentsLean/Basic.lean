@@ -1,6 +1,8 @@
 import VectorCommitmentsLean.RSA
 import Mathlib.Data.Nat.Factorization.Root
 import Mathlib.Data.Nat.Basic
+import Mathlib.Algebra.BigOperators.Group.Finset.Defs
+
 @[grind]
 structure FixedArray (q: ℕ) (α : Type) where
   arr : Array α
@@ -25,14 +27,15 @@ def KeyGen (p₁ p₂ q: ℕ) (a: ℕ) (e_array: FixedArray q ℕ) (_ : p₁ ≠
     N := p₁ * p₂,
     a := a,
     e_array := e_array,
-    S_array := {arr := (Array.finRange q).map (fun i => a ^ ((Array.finRange q).map (fun j => if i.1== j.1 then 1 else e_array.arr[j.1]'(by grind))).foldr (· * ·) 1), proof := by simp} 
+    S_array := {arr := Array.ofFn (n := q) (fun i => a ^ (∏ j : Fin q,  if i.1 == j.1 then 1 else e_array.arr[j.1]'(by grind))), proof := by simp} 
   }
 @[grind]
 def Commitment {q: ℕ} (pp: PublicParameters q)(m_array: FixedArray q ℕ) : ℕ × Auxillary q := 
-  (((Array.finRange q).map (fun i => pp.S_array.arr[i.1]'(by grind) ^ m_array.arr[i.1]'(by grind))).foldr (· * ·) 1, m_array)
+  (∏  i : Fin q,  pp.S_array.arr[i.1]'(by grind) ^ m_array.arr[i.1]'(by grind) , m_array)
 @[grind]
 def Open {q: ℕ} (pp: PublicParameters q) (_: ℕ) (i: ℕ) (aux : Auxillary q) (iValid: i < q) : ℕ :=
-  ((pp.e_array.arr[i]'(by grind)).floorRoot (((Array.finRange q).map (fun (k: Fin q) => if k.1 == i then 1 else pp.S_array.arr[k]'(by grind) ^ aux.arr[k]'(by grind))).foldr (· * ·) 1))  % pp.N
+  ((pp.e_array.arr[i]'(by grind)).floorRoot 
+    (∏ k: Fin q , (if k.1 == i then 1 else pp.S_array.arr[k.1]'(by grind) ^ aux.arr[k.1]'(by grind)))) % pp.N
 
 @[grind]
 def Verify {q: ℕ} (pp: PublicParameters q) (C m i proof : ℕ) (iValid: i < q): Bool :=
