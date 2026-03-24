@@ -78,7 +78,11 @@ lemma prod_is_perfect_power (q : ℕ) (a : ℕ) (e m : Fin q → ℕ) (i : Fin q
       intros x hxi
       rw [ fin_prod_factor_out q e x i hxi, pow_mul' ]
   rw [ ← Finset.prod_pow ]
-  exact Finset.prod_congr rfl fun x hx => by by_cases hi : x = i <;> simp [ hi, h_factor x ] ; ring;
+  apply Finset.prod_congr rfl
+  intros x hx
+  split_ifs with hi
+  · simp
+  · rw [h_factor x hi, ← pow_mul, ← pow_mul _ (m x), mul_comm (e i)]
 
 
 lemma mul_mod_pow_mod (A B N n : ℕ) :
