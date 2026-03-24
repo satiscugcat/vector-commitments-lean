@@ -78,13 +78,17 @@ lemma prod_is_perfect_power (q : ℕ) (a : ℕ) (e m : Fin q → ℕ) (i : Fin q
       intros x hxi
       rw [ fin_prod_factor_out q e x i hxi, pow_mul' ]
   rw [ ← Finset.prod_pow ]
-  exact Finset.prod_congr rfl fun x hx => by by_cases hi : x = i <;> simp +decide [ hi, h_factor x ] ; ring;
-#check Finset.prod_pow
+  exact Finset.prod_congr rfl fun x hx => by by_cases hi : x = i <;> simp [ hi, h_factor x ] ; ring;
+
+
 lemma mul_mod_pow_mod (A B N n : ℕ) :
     (A * (B % N) ^ n) % N = (A * B ^ n) % N := by
-  simp [ ← ZMod.natCast_eq_natCast_iff' ]
+  change (A * (B % N) ^ n) ≡ (A * B ^ n) [MOD N]
+  gcongr
+  apply Nat.mod_modEq
 
-#check ZMod.natCast_eq_natCast_iff'
+
+
 lemma if_neg_rewrite {α: Type} {c: Prop} [Decidable c] {e₁ e₂: α} (x: α) (h: ¬c → (e₂ = x)) : (if c then e₁ else e₂) = (if c then e₁ else x) :=
   by
     split_ifs
