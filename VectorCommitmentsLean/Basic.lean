@@ -131,18 +131,19 @@ theorem normal_correctness {q: ℕ}
   (c_less: C < pp.N)
   :  m == m_array.arr[i]'(by rw [m_array.proof]; exact iValid) → Verify pp C m i proof iValid == Bool.true:=
     by
-      intro hm_eq_m_array_i;
-      rcases validPublicKey with ⟨ p₁, p₂, a, e_array, neq, hp₁, hp₂, he, rfl ⟩ ; simp_all +decide [ Commitment, Open ] ;
+      intro mCorrect
+      rcases validPublicKey with ⟨ p₁, p₂, a, e_array, neq, hp₁, hp₂, he, rfl⟩
+      simp_all [ Commitment, Open ] 
       -- By `fin_prod_split`, `C` can be written as `S_i ^ m_i * P`.
       have hC_split : C = (a ^ (∏ j : Fin q, if i = j then 1 else e_array.arr[j]'(by
       simp [ e_array.proof ]))) ^ m_array.arr[i]'(by
       simpa [ m_array.proof ] using iValid) * ∏ x : Fin q, (if x = i then 1 else (a ^ (∏ j : Fin q, if x = j then 1 else e_array.arr[j]'(by
-      simp +decide [ e_array.2 ]))) ^ m_array.arr[x]'(by
+      simp  [ e_array.2 ]))) ^ m_array.arr[x]'(by
       exact m_array.proof.symm ▸ x.2)) := by
         rw [ ← validCommitment.1, fin_prod_split ];
         swap;
         exact ⟨ i, iValid ⟩;
-        simp +decide [ Fin.ext_iff, KeyGen ]
+        simp  [ Fin.ext_iff, KeyGen ]
       generalize_proofs at *;
       -- By `prod_is_perfect_power`, `P` can be written as `Y ^ e_i`.
       obtain ⟨Y, hY⟩ : ∃ Y, ∏ x : Fin q, (if x = i then 1 else (a ^ (∏ j : Fin q, if x = j then 1 else e_array.arr[j]'(by
@@ -157,8 +158,8 @@ theorem normal_correctness {q: ℕ}
         grind) ) ( fun j => m_array.arr[j]'(by
         grind) ) ⟨ i, iValid ⟩ using 1
         all_goals generalize_proofs at *;
-        · simp +decide [ Fin.ext_iff, eq_comm ];
-        · simp +decide [ Fin.ext_iff, eq_comm ]
+        · simp  [ Fin.ext_iff, eq_comm ];
+        · simp  [ Fin.ext_iff, eq_comm ]
       generalize_proofs at *;
       -- By `Nat.floorRoot_pow_self`, `floorRoot(e_i, Y ^ e_i) = Y`.
       have h_floorRoot : Nat.floorRoot (e_array.arr[i]'(by
@@ -170,16 +171,16 @@ theorem normal_correctness {q: ℕ}
       -- Substitute `Y` for `proof` in the goal.
       have h_proof : proof = Y % (p₁ * p₂) := by
         rw [ ← validProof, ← h_floorRoot, ← hY ];
-        simp +decide [ KeyGen, Finset.prod_ite, validCommitment.2 ];
-        simp +decide [ Fin.ext_iff ];
-      unfold Verify; simp +decide [ hC_split, h_proof ] ;
+        simp  [ KeyGen, Finset.prod_ite, validCommitment.2 ];
+        simp  [ Fin.ext_iff ];
+      unfold Verify; simp  [ hC_split, h_proof ] ;
       convert congr_arg ( · % ( p₁ * p₂ ) ) hC_split using 1;
       · rw [ hC_split, Nat.mod_eq_of_lt ];
         · congr! 3;
         · exact hC_split ▸ c_less;
-      · simp +decide [ KeyGen, Nat.mul_mod, Nat.pow_mod ];
-        simp +decide [ ← Nat.pow_mod, validCommitment.2.symm ];
-        simp +decide [ ← hY ];
+      · simp [ KeyGen, Nat.mul_mod, Nat.pow_mod ];
+        simp [ ← Nat.pow_mod, validCommitment.2.symm ];
+        simp [ ← hY ];
 
 
 -- theorem normal_correctness {q: ℕ} 
