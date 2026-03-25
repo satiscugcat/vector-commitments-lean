@@ -99,25 +99,9 @@ lemma if_neg_rewrite {α: Type} {c: Prop} [Decidable c] {e₁ e₂: α} (x: α) 
     rfl
     apply h; assumption
 
-/-
-PROVIDED SOLUTION
-Step 1: Unfold Verify, KeyGen, Commitment, Open definitions using simp. Destructure validPublicKey, validCommitment. Substitute mCorrect (m = m_array[i]) and auxEq (m_array = aux). Substitute validProof (the proof value).
 
-After unfolding, the goal becomes:
-  C = (S_i ^ m_i * (floorRoot(e_i, P) % N) ^ e_i) % N
-where:
-  S_i = a ^ (∏ j, if i = j then 1 else e_j)
-  C = ∏ x, S_x ^ m_x
-  P = ∏ x, if x = i then 1 else S_x ^ m_x
-  N = p₁ * p₂
 
-Step 2: By fin_prod_split, C = S_i ^ m_i * P.
-
-Step 3: By prod_is_perfect_power, P = Y ^ e_i for some Y. Therefore floorRoot(e_i, P) = floorRoot(e_i, Y ^ e_i) = Y by Nat.floorRoot_pow_self (need e_i ≠ 0, which follows from 1 < e_i from the he hypothesis).
-
-Step 4: By mul_mod_pow_mod, (S_i^m_i * (Y % N)^e_i) % N = (S_i^m_i * Y^e_i) % N = (S_i^m_i * P) % N = C % N = C (by Nat.mod_eq_of_lt and c_less).
--/
-theorem normal_correctness {q: ℕ}
+theorem normal_correctness {q: ℕ} 
   (pp: PublicParameters q)
   (C: ℕ)
   (aux : Auxillary q)
@@ -129,81 +113,50 @@ theorem normal_correctness {q: ℕ}
   (validCommitment:  Commitment pp m_array = (C, aux))
   (validProof: Open pp m i aux  iValid = proof)
   (c_less: C < pp.N)
-  :  m == m_array.arr[i]'(by rw [m_array.proof]; exact iValid) → Verify pp C m i proof iValid == Bool.true:=
+  :  m == m_array.arr[i]'(by rw [m_array.proof]; exact iValid) → Verify pp C m i proof iValid == Bool.true:= 
     by
-      intro mCorrect
-      rcases validPublicKey with ⟨ p₁, p₂, a, e_array, neq, hp₁, hp₂, he, rfl⟩
-      simp_all [ Commitment, Open ] 
-      -- By `fin_prod_split`, `C` can be written as `S_i ^ m_i * P`.
-      have hC_split : C = (a ^ (∏ j : Fin q, if i = j then 1 else e_array.arr[j]'(by
-      simp [ e_array.proof ]))) ^ m_array.arr[i]'(by
-      simpa [ m_array.proof ] using iValid) * ∏ x : Fin q, (if x = i then 1 else (a ^ (∏ j : Fin q, if x = j then 1 else e_array.arr[j]'(by
-      simp  [ e_array.2 ]))) ^ m_array.arr[x]'(by
-      exact m_array.proof.symm ▸ x.2)) := by
-        rw [ ← validCommitment.1, fin_prod_split ];
-        swap;
-        exact ⟨ i, iValid ⟩;
-        simp  [ Fin.ext_iff, KeyGen ]
-      generalize_proofs at *;
-      -- By `prod_is_perfect_power`, `P` can be written as `Y ^ e_i`.
-      obtain ⟨Y, hY⟩ : ∃ Y, ∏ x : Fin q, (if x = i then 1 else (a ^ (∏ j : Fin q, if x = j then 1 else e_array.arr[j]'(by
-      grind))) ^ m_array.arr[x]'(by
-      grind)) = Y ^ e_array.arr[i]'(by
-      assumption) := by
-        use ∏ x : Fin q, (if x = i then 1 else (a ^ (∏ j : Fin q, if x = j ∨ i = j then 1 else e_array.arr[j]'(by
-        grind))) ^ m_array.arr[x]'(by
-        grind))
-        generalize_proofs at *;
-        convert prod_is_perfect_power q a ( fun j => e_array.arr[j]'(by
-        grind) ) ( fun j => m_array.arr[j]'(by
-        grind) ) ⟨ i, iValid ⟩ using 1
-        all_goals generalize_proofs at *;
-        · simp  [ Fin.ext_iff, eq_comm ];
-        · simp  [ Fin.ext_iff, eq_comm ]
-      generalize_proofs at *;
-      -- By `Nat.floorRoot_pow_self`, `floorRoot(e_i, Y ^ e_i) = Y`.
-      have h_floorRoot : Nat.floorRoot (e_array.arr[i]'(by
-      assumption)) (Y ^ e_array.arr[i]'(by
-      assumption)) = Y := by
-        apply Nat.floorRoot_pow_self;
-        exact ne_of_gt ( lt_trans zero_lt_one ( he _ ( by simp ) |>.2.1 ) )
-      generalize_proofs at *;
-      -- Substitute `Y` for `proof` in the goal.
-      have h_proof : proof = Y % (p₁ * p₂) := by
-        rw [ ← validProof, ← h_floorRoot, ← hY ];
-        simp  [ KeyGen, Finset.prod_ite, validCommitment.2 ];
-        simp  [ Fin.ext_iff ];
-      unfold Verify; simp  [ hC_split, h_proof ] ;
-      convert congr_arg ( · % ( p₁ * p₂ ) ) hC_split using 1;
-      · rw [ hC_split, Nat.mod_eq_of_lt ];
-        · congr! 3;
-        · exact hC_split ▸ c_less;
-      · simp [ KeyGen, Nat.mul_mod, Nat.pow_mod ];
-        simp [ ← Nat.pow_mod, validCommitment.2.symm ];
-        simp [ ← hY ];
+      intro mCorrect 
+      rcases validPublicKey with ⟨p₁, p₂, a, e_array, neq, hp₁, hp₂, he, validPublicKey⟩
+      simp [Verify]
+      simp [KeyGen] at validPublicKey
+      simp [Commitment] at validCommitment
+      simp [Open] at validProof
+      cases validPublicKey
+      simp at *
+      rcases validCommitment with ⟨cEq, auxEq⟩
+      -- rewriting cEq
+      conv at cEq =>
+        left
+        rw [fin_prod_split _ _ ⟨i, iValid⟩]
+        simp [Fin.ext_iff]
+      
+      have : _ := fun  m => prod_is_perfect_power q a (fun x_1 => e_array.arr[↑x_1]'(by grind)) m ⟨i, iValid⟩       
+      simp [Fin.ext_iff] at this
+      conv at this =>
+        intro m
+        left; right
+        intro x
+        right; left; right; right
+        intro x_1
+        simp [eq_comm]
+        
+      conv at validProof =>
+        left; left; right
+        simp [Fin.ext_iff]; rw [this]
+        left; right; intro _; right; right; rw [← auxEq]
+      conv at cEq =>
+        left; right
+        simp [Fin.ext_iff]; rw [this]
+      rw [Nat.floorRoot_pow_self (by exact ne_of_gt (lt_trans zero_lt_one (he _ ( by simp ) |>.2.1 ) ))] at validProof
+      conv =>
+        right; left
+        rw [mCorrect]
+        rw [← validProof]
 
-
--- theorem normal_correctness {q: ℕ} 
---   (pp: PublicParameters q)
---   (C: ℕ)
---   (aux : Auxillary q)
---   (m i: ℕ)
---   (m_array: FixedArray q ℕ)
---   (iValid: i < q)
---   (proof: ℕ)
---   (validPublicKey: ∃ p₁ p₂  a e_array neq hp₁ hp₂ he, KeyGen p₁ p₂ q a e_array neq hp₁ hp₂  he = pp)
---   (validCommitment:  Commitment pp m_array = (C, aux))
---   (validProof: Open pp m i aux  iValid = proof)
---   (c_less: C < pp.N)
---   :  m == m_array.arr[i]'(by rw [m_array.proof]; exact iValid) → Verify pp C m i proof iValid == Bool.true:= 
---     by
---       intro mCorrect 
---       rcases validPublicKey with ⟨p₁, p₂, a, e_array, neq, hp₁, hp₂, he, validPublicKey⟩
---       simp [Verify]
---       simp [KeyGen] at validPublicKey
---       simp [Commitment] at validCommitment
---       simp [Open] at validProof
---       cases validPublicKey
---       simp at *
---       rcases validCommitment with ⟨cEq, auxEq⟩
---       sorry
+      conv =>
+        right
+        rw [mul_mod_pow_mod]
+        left
+        rw [cEq]
+      
+      exact Eq.symm (Nat.mod_eq_of_lt c_less)
