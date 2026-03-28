@@ -152,11 +152,18 @@ theorem normal_correctness {q: ℕ}
         right; left
         rw [mCorrect]
         rw [← validProof]
-
       conv =>
         right
         rw [mul_mod_pow_mod]
         left
-        rw [cEq]
-      
+        rw [cEq]      
       exact Eq.symm (Nat.mod_eq_of_lt c_less)
+
+
+structure VC_Adversary (q: ℕ) where
+  A: PublicParameters q → (ℕ × ℕ × ℕ × ℕ × ℕ × ℕ)
+  iq: ∀ pp, (A pp).2.2.2.1 < q
+  proof: ∀ pp,  Verify pp (A pp).1 (A pp).2.1 (A pp).2.2.2.1 (A pp).2.2.2.2.1 (iq pp) = Bool.true 
+                ∧ Verify pp (A pp).1 (A pp).2.2.1 (A pp).2.2.2.1 (A pp).2.2.2.2.2 (iq pp) = Bool.true
+                ∧ (A pp).2.1 ≠ (A pp).2.2.1
+

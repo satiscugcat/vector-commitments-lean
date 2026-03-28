@@ -222,3 +222,6 @@ theorem dec_undoes_enc {p q n msg pub_e priv: ℕ}
           }
         }
         
+structure RSA_Adversary where
+  f: ℕ → ℕ → ℕ → ℕ
+  proof: ∀ N e z, (f N e z) ^ e = z % N
