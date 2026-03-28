@@ -166,4 +166,19 @@ structure VC_Adversary (q: ℕ) where
   proof: ∀ pp,  Verify pp (A pp).1 (A pp).2.1 (A pp).2.2.2.1 (A pp).2.2.2.2.1 (iq pp) = Bool.true 
                 ∧ Verify pp (A pp).1 (A pp).2.2.1 (A pp).2.2.2.1 (A pp).2.2.2.2.2 (iq pp) = Bool.true
                 ∧ (A pp).2.1 ≠ (A pp).2.2.1
-
+/-
+  We need to construct an RSA adversary from a vector commitment adversary. All the pain points have exclamation marks beside them.
+  The proof in the paper takes the following steps:
+  1. Let the inputs to RSA Adversary be N, z, e. We need a value y.
+  2. Randomly choose an index to put our e in. Assign a to z. Generate the rest as required by KeyGen.
+     Note that we do NOT use N. We can use whatever prime numbers we wish.
+  3. Now, we get (C, m, m', i, P, P') according to VC adversary. 
+  4. If we put e at this i, then fine, else discard. [!! We do not have randomness. Have to add as an assumption]
+  5. From the equations C = S_i^m P^{e_i} C = S_i^m' P'^{e_i}: [!! Do we have this? Yes. If C < pq, then p is necessarily lesser than pq. We can always choose pq large enough.]
+  6. S_i^{m-m'}=(P'/P)^{e_i}
+  7. If RHS is 1, then we can factor with non-neglible probability. [!! Cited paper, we have to add as an assumption. Also change probability to guarantee? This feels weird to assume.]
+  8. If RHS is not 1, we can apply Shamir's trick. [!! Cited paper. Do we need to assume?]
+  9. Since gcd(m ∏_{i ≠ j} e_j, e_i) = 1 (why?) compute integers λ μ such that linear combination is 1.
+  10. Leads to equation a = Λ^{λe_i}a^{μe_i}. 
+-/
+def vc_secure{q: ℕ} (vc: VC_Adversary q):  RSA_Adversary := sorry
