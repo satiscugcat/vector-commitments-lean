@@ -160,6 +160,79 @@ theorem normal_correctness {q: ℕ}
       exact Eq.symm (Nat.mod_eq_of_lt c_less)
 
 
+
+theorem update_correctness {q: ℕ} 
+  (pp: PublicParameters q)
+  (C C': ℕ)
+  (aux : Auxillary q)
+  (m m' i j: ℕ)
+  (m_array: FixedArray q ℕ)
+  (jValid: j < q)
+  (iValid: i < q)
+  (updateGreater: m' > m)
+  (proof proof': ℕ)
+  (u: UpdateInfo)
+  (validPublicKey: ∃ p₁ p₂  a e_array neq hp₁ hp₂ he, KeyGen p₁ p₂ q a e_array neq hp₁ hp₂  he = pp)
+  (validCommitment:  Commitment pp m_array = (C, aux))
+  (validProof: Open pp m j aux jValid = proof)
+  (validNewCommitment: Update pp C m m' i iValid = (C', u))
+  (validNewProof: ProofUpdate pp C proof j m' i u iValid jValid = (proof', C'))
+  (c'_less: C' < pp.N)
+  (c_less: C < pp.N)
+  :  m == m_array.arr[i]'(by rw [m_array.proof]; exact iValid) → Verify pp C' m' i proof' iValid == Bool.true:= 
+    by
+      intro mCorrect 
+      rcases validPublicKey with ⟨p₁, p₂, a, e_array, neq, hp₁, hp₂, he, validPublicKey⟩
+      simp [Verify]
+      simp [KeyGen] at validPublicKey
+      simp [Commitment] at validCommitment
+      simp [Open] at validProof
+      simp [Update] at validNewCommitment
+      simp [ProofUpdate] at validNewProof
+      cases validPublicKey
+      simp at *
+      
+      rcases validCommitment with ⟨cEq, auxEq⟩
+      rcases validNewCommitment with ⟨c'Eq, uEq⟩
+      cases uEq
+      simp at *
+      
+      -- -- rewriting cEq
+      -- conv at cEq =>
+      --   left
+      --   rw [fin_prod_split _ _ ⟨i, iValid⟩]
+      --   simp [Fin.ext_iff]
+      
+      -- have : _ := fun  m => prod_is_perfect_power q a (fun x_1 => e_array.arr[↑x_1]'(by grind)) m ⟨i, iValid⟩       
+      -- simp [Fin.ext_iff] at this
+      -- conv at this =>
+      --   intro m
+      --   left; right
+      --   intro x
+      --   right; left; right; right
+      --   intro x_1
+      --   simp [eq_comm]
+        
+      -- conv at validProof =>
+      --   left; left; right
+      --   simp [Fin.ext_iff]; rw [this]
+      --   left; right; intro _; right; right; rw [← auxEq]
+      -- conv at cEq =>
+      --   left; right
+      --   simp [Fin.ext_iff]; rw [this]
+      -- rw [Nat.floorRoot_pow_self (by exact ne_of_gt (lt_trans zero_lt_one (he _ ( by simp ) |>.2.1 ) ))] at validProof
+      -- conv =>
+      --   right; left
+      --   rw [mCorrect]
+      --   rw [← validProof]
+      -- conv =>
+      --   right
+      --   rw [mul_mod_pow_mod]
+      --   left
+      --   rw [cEq]      
+      -- exact Eq.symm (Nat.mod_eq_of_lt c_less)
+      sorry
+
 structure VC_Adversary (q: ℕ) where
   A: PublicParameters q → (ℕ × ℕ × ℕ × ℕ × ℕ × ℕ)
   iq: ∀ pp, (A pp).2.2.2.1 < q
