@@ -48,10 +48,8 @@ def Update {q: ℕ} (pp: PublicParameters q) (C m m' i: ℕ) (iValid: i < q): �
   (C * (pp.S_array.arr[i]'(by grind))^(m' - m), {m := m, m' := m', i := i})
 @[grind]
 def ProofUpdate {q: ℕ} (pp: PublicParameters q) (C proof j m' i: ℕ) (U: UpdateInfo) (iValid: i < q) (jValid: j < q): ℕ × ℕ :=
-  if i != j then
-    (C * pp.S_array.arr[i]'(by grind)^(m' - U.m), proof * (pp.e_array.arr[i]'(by grind)).floorRoot (pp.S_array.arr[i]'(by grind)^(m' - U.m)))
-  else
-    (C * pp.S_array.arr[i]'(by grind)^(m' - U.m), proof)
+  
+    (C * pp.S_array.arr[i]'(by grind)^(m' - U.m), if i != j then proof * (pp.e_array.arr[j]'(by grind)).floorRoot (pp.S_array.arr[i]'(by grind)^(m' - U.m)) else proof)
 
 
 lemma fin_prod_factor_out (q : ℕ) (e : Fin q → ℕ) (x i : Fin q) (hxi : x ≠ i) :
@@ -165,7 +163,7 @@ theorem update_correctness {q: ℕ}
   (pp: PublicParameters q)
   (C C': ℕ)
   (aux : Auxillary q)
-  (m m' i j: ℕ)
+  (m m' mj i j: ℕ)
   (m_array: FixedArray q ℕ)
   (jValid: j < q)
   (iValid: i < q)
@@ -176,12 +174,12 @@ theorem update_correctness {q: ℕ}
   (validCommitment:  Commitment pp m_array = (C, aux))
   (validProof: Open pp m j aux jValid = proof)
   (validNewCommitment: Update pp C m m' i iValid = (C', u))
-  (validNewProof: ProofUpdate pp C proof j m' i u iValid jValid = (proof', C'))
+  (validNewProof: ProofUpdate pp C proof j m' i u iValid jValid = (C', proof'))
   (c'_less: C' < pp.N)
   (c_less: C < pp.N)
-  :  m == m_array.arr[i]'(by rw [m_array.proof]; exact iValid) → Verify pp C' m' i proof' iValid == Bool.true:= 
+  :  m == m_array.arr[i]'(by rw [m_array.proof]; exact iValid) → mj == m_array.arr[j]'(by rw [m_array.proof]; exact jValid) → Verify pp C' (if i = j then m' else mj) j proof' jValid == Bool.true:= 
     by
-      intro mCorrect 
+      intro mCorrect mjCorrect
       rcases validPublicKey with ⟨p₁, p₂, a, e_array, neq, hp₁, hp₂, he, validPublicKey⟩
       simp [Verify]
       simp [KeyGen] at validPublicKey
@@ -197,30 +195,90 @@ theorem update_correctness {q: ℕ}
       cases uEq
       simp at *
       
-      -- -- rewriting cEq
-      -- conv at cEq =>
-      --   left
-      --   rw [fin_prod_split _ _ ⟨i, iValid⟩]
-      --   simp [Fin.ext_iff]
+      -- rewriting cEq
       
-      -- have : _ := fun  m => prod_is_perfect_power q a (fun x_1 => e_array.arr[↑x_1]'(by grind)) m ⟨i, iValid⟩       
-      -- simp [Fin.ext_iff] at this
-      -- conv at this =>
-      --   intro m
-      --   left; right
-      --   intro x
-      --   right; left; right; right
-      --   intro x_1
-      --   simp [eq_comm]
-        
-      -- conv at validProof =>
-      --   left; left; right
-      --   simp [Fin.ext_iff]; rw [this]
-      --   left; right; intro _; right; right; rw [← auxEq]
-      -- conv at cEq =>
-      --   left; right
-      --   simp [Fin.ext_iff]; rw [this]
-      -- rw [Nat.floorRoot_pow_self (by exact ne_of_gt (lt_trans zero_lt_one (he _ ( by simp ) |>.2.1 ) ))] at validProof
+      have this_i : _ := fun  m => prod_is_perfect_power q a (fun x_1 => e_array.arr[↑x_1]'(by grind)) m ⟨i, iValid⟩
+      have this_j : _ := fun  m => prod_is_perfect_power q a (fun x_1 => e_array.arr[↑x_1]'(by grind)) m ⟨j, jValid⟩       
+      simp [Fin.ext_iff] at this_i
+      simp [Fin.ext_iff] at this_j
+      conv at this_i =>
+        intro m
+        left; right
+        intro x
+        right; left; right; right
+        intro x_1
+        simp [eq_comm]
+      conv at this_j =>
+        intro m
+        left; right
+        intro x
+        right; left; right; right
+        intro x_1
+        simp [eq_comm]
+      conv at validProof =>
+        left; left; right
+        simp [Fin.ext_iff]; rw [this_j]
+        left; right; intro _; right; right; rw [← auxEq]
+      
+      rw [Nat.floorRoot_pow_self (by exact ne_of_gt (lt_trans zero_lt_one (he _ ( by simp ) |>.2.1 ) ))] at validProof
+      rcases validNewProof with ⟨_, proof'Eq⟩
+      split_ifs at proof'Eq with h
+      {
+        conv at cEq =>
+          left
+          rw [fin_prod_split _ _ ⟨i, iValid⟩]
+          simp [Fin.ext_iff]
+        conv at cEq =>
+          left; right
+          simp [Fin.ext_iff]; rw [this_i]
+        rw [← proof'Eq]
+        rw [← cEq] at c'Eq
+        conv at c'Eq =>
+          left
+          rw [mul_comm, ← mul_assoc]
+          left
+          rw [mCorrect, ← pow_add, Nat.sub_add_cancel (by grind)]
+        rw [← validProof]
+        conv =>
+          right
+          rw [if_pos h, mul_mod_pow_mod]
+          simp [← h]
+          left; right; left; right; intro x
+          simp [← h]
+        conv =>
+          right; left
+          rw [c'Eq]
+        clear * - c'_less
+        exact Eq.symm (Nat.mod_eq_of_lt c'_less)
+      }
+      {
+        rw [if_neg h]
+        conv at cEq =>
+          left
+          rw [fin_prod_split _ _ ⟨j, jValid⟩]
+          simp [Fin.ext_iff]
+        conv at cEq =>
+          left; right
+          simp [Fin.ext_iff]; rw [this_j]
+        conv at proof'Eq =>
+          left; right; right; left
+          rw [fin_prod_split _ _ ⟨j, jValid⟩]
+          simp [Fin.ext_iff]
+          rw [if_neg h, pow_mul']
+        rw [pow_right_comm] at proof'Eq
+        rw [Nat.floorRoot_pow_self (by exact ne_of_gt (lt_trans zero_lt_one (he _ ( by simp ) |>.2.1 ) ))] at proof'Eq
+        conv at c'Eq =>
+          left; right
+          rw [fin_prod_split _ _ ⟨j, jValid⟩]
+          simp [Fin.ext_iff]
+          rw [if_neg h, pow_mul', pow_right_comm]
+        rw [← proof'Eq, mul_pow, mjCorrect, ← validProof]
+        conv => right;left; right; rw [mul_comm]
+        rw [← mul_assoc, mul_mod_pow_mod, mul_assoc]
+        conv => right;left; right; rw [mul_comm]
+        rw [← mul_assoc, cEq, c'Eq]
+        exact Eq.symm (Nat.mod_eq_of_lt c'_less)
+      }
       -- conv =>
       --   right; left
       --   rw [mCorrect]
@@ -231,7 +289,7 @@ theorem update_correctness {q: ℕ}
       --   left
       --   rw [cEq]      
       -- exact Eq.symm (Nat.mod_eq_of_lt c_less)
-      sorry
+
 
 structure VC_Adversary (q: ℕ) where
   A: PublicParameters q → (ℕ × ℕ × ℕ × ℕ × ℕ × ℕ)
