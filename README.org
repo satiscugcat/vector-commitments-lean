@@ -1,14 +1,34 @@
 #+title: A Basic Implementation of Vector Commitments in LEAN4
 #+author: Sati
+
 * Introduction
 ** Commitment Schemes
-   From [[https://en.wikipedia.org/wiki/Commitment_scheme][Wikipedia]]:
+   Let us imagine Alice and Bob want to play a game across the internet. Bob has a coin, and Alice needs to guess the result of Bob's coin flip. Normally, they cannot truly pay the game. If Alice reveals her guess before Bob reveals the result of the coin flip, Bob can lie about the result of the coin flip. If Alice reveals her guess after Bob reveals the result, then Alice can just lie about her guess.
+
+   *Commitment schemes* are a way to get around this. The above game played using a commitment scheme works as follows:
+   + Alice sends a *commitment* to Bob, that is generated using the guess, but does not reveal the guess itself.
+   + Bob then *reveals* the result of the coin flip to Alice.
+   + Alice then *reveals her guess*, along with a *proof*.
+   + Bob uses *the guess, the proof, and the commitment* to *verify* that the guess was indeed what was committed to.
+   
+   More from [[https://en.wikipedia.org/wiki/Commitment_scheme][Wikipedia]]:
    #+begin_quote
-   A commitment scheme is a cryptographic primitive that allows one to commit to a chosen value (or chosen statement) while keeping it hidden to others, with the ability to reveal the committed value later.[1] Commitment schemes are designed so that a party cannot change the value or statement after they have committed to it: that is, commitment schemes are binding. Commitment schemes have important applications in a number of cryptographic protocols including secure coin flipping, zero-knowledge proofs, and secure computation. 
+   A *commitment scheme* is a cryptographic primitive that allows one to commit to a chosen value (or chosen statement) while keeping it hidden to others, with the ability to reveal the committed value later. Commitment schemes are designed so that /a party cannot change the value or statement after they have committed to it/: that is, commitment schemes are binding. Commitment schemes have important applications in a number of cryptographic protocols including *secure coin flipping, zero-knowledge proofs, and secure computation*. 
    #+end_quote
 ** Vector Commitment Schemes
-   Vector Commitments are a data str
+   In [[https://eprint.iacr.org/2011/495.pdf][Vector Commitments and their Applications (D. Catalano and D. Fiore, Intl. Workshop on Public Key Cryptography, 2013)]], the authors introduce the notion of a *Vector Commitment Scheme*. Whereas a commitment scheme allows one to commit to a particular message, a vector commitment scheme allows one to commit to a *particular message at a particular position among a vector of messages*. More importantly, *neither the size of the commitment, nor the size of the proof, depends on the size of the vector*.
 ** This Project
+   This project follows =Section 3.2= of the paper. It implements a vector commitment scheme as outlined using LEAN4 primitives, and also proves correctness theorems about them. The exact details and choices of representation (along with resulting compromises) are laid out below.
+   
 * Module-wise Project Overview
 ** [[file:VectorCommitmentsLean/RSA.lean][RSA.lean]]
+*** Overview
+    This file largely contains a proof of the RSA encryption algorithm, an almost direct portover of [[https://github.com/aronerben/lean-rsa][aronerben/lean-rsa]] from lean3/mathlib3 to lean4/mathlib4. Here is a short description of the changes:
+    + Removed uses of all "global" variables.
+    + Changed functions enc and dec to take public parameter "N" instead of accepting prime numbers p and q directly (as that would kind of defeat the whole point).
+    + Introduced an incomplete definition of "RSA Adversary" as discussed in the paper.
+*** Lemmas, Theorems, and Functions
+    + [[file:VectorCommitmentsLean/RSA.lean::lemma mod_pow_mod (a b n : ℕ ): ((a % n) ^ b) % n = (a ^ b) % n :=][mod_pow_mod]] - 
 ** [[file:VectorCommitmentsLean/Basic.lean][Basic.lean]]
+
+* Possible Improvements
