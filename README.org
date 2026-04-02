@@ -1,2 +1,14 @@
 #+title: A Basic Implementation of Vector Commitments in LEAN4
 #+author: Sati
+* Introduction
+** Commitment Schemes
+   From [[https://en.wikipedia.org/wiki/Commitment_scheme][Wikipedia]]:
+   #+begin_quote
+   A commitment scheme is a cryptographic primitive that allows one to commit to a chosen value (or chosen statement) while keeping it hidden to others, with the ability to reveal the committed value later.[1] Commitment schemes are designed so that a party cannot change the value or statement after they have committed to it: that is, commitment schemes are binding. Commitment schemes have important applications in a number of cryptographic protocols including secure coin flipping, zero-knowledge proofs, and secure computation. 
+   #+end_quote
+** Vector Commitment Schemes
+   Vector Commitments are a data str
+** This Project
+* Module-wise Project Overview
+** [[file:VectorCommitmentsLean/RSA.lean][RSA.lean]]
+** [[file:VectorCommitmentsLean/Basic.lean][Basic.lean]]
