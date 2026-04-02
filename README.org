@@ -23,12 +23,19 @@
 * Module-wise Project Overview
 ** [[file:VectorCommitmentsLean/RSA.lean][RSA.lean]]
 *** Overview
-    This file largely contains a proof of the RSA encryption algorithm, an almost direct portover of [[https://github.com/aronerben/lean-rsa][aronerben/lean-rsa]] from lean3/mathlib3 to lean4/mathlib4. Here is a short description of the changes:
+    This file largely contains a proof of the RSA encryption algorithm, an almost direct portover of [[https://github.com/aronerben/lean-rsa][aronerben/lean-rsa]] from lean3/mathlib3 to lean4/mathlib4. Here is a short description of the actual changes:
     + Removed uses of all "global" variables.
     + Changed functions enc and dec to take public parameter "N" instead of accepting prime numbers p and q directly (as that would kind of defeat the whole point).
     + Introduced an incomplete definition of "RSA Adversary" as discussed in the paper.
-*** Lemmas, Theorems, and Functions
-    + [[file:VectorCommitmentsLean/RSA.lean::lemma mod_pow_mod (a b n : ℕ ): ((a % n) ^ b) % n = (a ^ b) % n :=][mod_pow_mod]] - 
+    Everything is represented as a natural number. The implementation of the module turned out to be a bit eager, because despite the paper referencing RSA, it does not actually use RSA directly.
+*** Lemmas, Theorems, Structures, and Functions
+    + mod_pow_mod - ((a % n) ^ b) % n = (a ^ b) % n
+    + mul_mod_right_distrib - (a * b) % n = ((a % n) * (b % n)) % n
+    + enc - RSA encryption function, takes in a message, public key, and N to give an encrypted message
+    + dec - RSA decryption function, takes in an encrypted message, private key, and N to give back an encrypted message
+    + mul_coprime_or_coprime_and - If p and q are primes, then for any natural number n, then either both p and q are coprime to n, or atleast one isn't coprime.
+    + dec_undoes_enc - Under the standard conditions required by RSA key generation, the message produced by encrypting and then decrypting a message produces the same message.
+    + RSA_Adversary - An RSA_Adversary is a function =f= such that (f N e z) ^ e = z % N for all choices of N, e, z. This notion needs to be redefined with a "Probabilistic Polynomial Time" adversary.
 ** [[file:VectorCommitmentsLean/Basic.lean][Basic.lean]]
 
 * Possible Improvements
