@@ -60,3 +60,5 @@
    Given the use of the conv tactic, it'd be of interest to develop proof automation that just possibly takes a theorem and a hypothesis/goal and rewrites where it can. (Note: For some reason, rw does not always directly work, LEAN often complains about it having the "wrong motive".)
 ** Proper Security Proofs
    Using the primitives presented in [[https://eprint.iacr.org/2025/1700.pdf][Computationally-Sound Symbolic Cryptography in Lean]], we may be able to actually flesh out the proof of the security of the scheme.
+** Using BitVecs instead of Natural Numbers
+   It'd be better to use [[https://leanprover-community.github.io/mathlib4_docs/Mathlib/Data/BitVec.html][BitVecs]] instead of Natural numbers for most of the definitions. Natural numbers were chosen mostly for the convenience in terms of available theorems.
