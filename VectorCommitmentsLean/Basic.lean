@@ -23,6 +23,10 @@ structure UpdateInfo where
   i : ℕ
 
 abbrev Auxillary (q : ℕ) := FixedArray q ℕ
+
+/--
+  Instead of random generation, we choose to take the required values as inputs, and put constraints on them. The Public Parameters used by this are used by all functions.
+-/
 @[grind]
 def KeyGen (p₁ p₂ q: ℕ) (a: ℕ) (e_array: FixedArray q ℕ) (_ : p₁ ≠ p₂)(_: p₁.Prime) (_: p₂.Prime) (_: ∀ e ∈ e_array.arr, e.Coprime (p₁ * p₂).totient ∧ 1 < e ∧ e < (p₁ * p₂).totient): PublicParameters q := 
   {
@@ -31,21 +35,37 @@ def KeyGen (p₁ p₂ q: ℕ) (a: ℕ) (e_array: FixedArray q ℕ) (_ : p₁ ≠
     e_array := e_array,
     S_array := {arr := Array.ofFn (n := q) (fun i => a ^ (∏ j : Fin q,  if i.1 == j.1 then 1 else e_array.arr[j.1]'(by grind))), proof := by simp} 
   }
+
+/--
+  Produces a Commitment using the Public Parameters, the "Auxillary" information is used when generating a proof. 
+-/
+
 @[grind]
 def Commitment {q: ℕ} (pp: PublicParameters q)(m_array: FixedArray q ℕ) : ℕ × Auxillary q := 
   (∏  i : Fin q,  pp.S_array.arr[i.1]'(by grind) ^ m_array.arr[i.1]'(by grind) , m_array)
+/--
+  Generating a proof for a message at position i using Public Parameters and Auxillary information.
+-/
 @[grind]
 def Open {q: ℕ} (pp: PublicParameters q) (_: ℕ) (i: ℕ) (aux : Auxillary q) (iValid: i < q) : ℕ :=
   ((pp.e_array.arr[i]'(by grind)).floorRoot 
     (∏ k: Fin q , (if k.1 == i then 1 else pp.S_array.arr[k.1]'(by grind) ^ aux.arr[k.1]'(by grind)))) % pp.N
-
+/--
+  Verifying that a message is indeed at position i according to the original commitment using the proof.
+-/
 @[grind]
 def Verify {q: ℕ} (pp: PublicParameters q) (C m i proof : ℕ) (iValid: i < q): Bool :=
   if C == (pp.S_array.arr[i]'(by grind) ^ m) * (proof ^ pp.e_array.arr[i]'(by grind)) % pp.N then Bool.true else Bool.false
-
+/--
+  If the message vector is updated, used for producing a commitment, along with Update Information that is used for generating new proofs.
+-/
 @[grind]
 def Update {q: ℕ} (pp: PublicParameters q) (C m m' i: ℕ) (iValid: i < q): ℕ × UpdateInfo := 
   (C * (pp.S_array.arr[i]'(by grind))^(m' - m), {m := m, m' := m', i := i})
+
+/--
+  Used to generate proofs post-update. I do not understand why the original paper also specifies generation of the commitment.
+-/
 @[grind]
 def ProofUpdate {q: ℕ} (pp: PublicParameters q) (C proof j m' i: ℕ) (U: UpdateInfo) (iValid: i < q) (jValid: j < q): ℕ × ℕ :=
   
@@ -98,7 +118,9 @@ lemma if_neg_rewrite {α: Type} {c: Prop} [Decidable c] {e₁ e₂: α} (x: α) 
     apply h; assumption
 
 
-
+/--
+  The proof strategy for both the below proofs just consists of rewrites and simplifications.
+-/
 theorem normal_correctness {q: ℕ} 
   (pp: PublicParameters q)
   (C: ℕ)
@@ -167,7 +189,7 @@ theorem update_correctness {q: ℕ}
   (m_array: FixedArray q ℕ)
   (jValid: j < q)
   (iValid: i < q)
-  (updateGreater: m' > m)
+  (updateGreater: m' > m) -- Required since we're modelling everything with natural numbers, and we have the operation "m' - m"
   (proof proof': ℕ)
   (u: UpdateInfo)
   (validPublicKey: ∃ p₁ p₂  a e_array neq hp₁ hp₂ he, KeyGen p₁ p₂ q a e_array neq hp₁ hp₂  he = pp)
